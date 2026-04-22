@@ -156,6 +156,36 @@ curl -X POST https://valuehead-production.up.railway.app/api/v1/traces/batch \
   -d '{"traces": [{"messages": [...], "metadata": {...}}, ...]}'
 ```
 
+## Custom evaluation instructions
+
+You can pass custom `instructions` to tailor the trajectory-level evaluation to your specific criteria. These instructions are factored heavily into the overall trajectory score.
+
+```python
+result = client.submit(
+    messages=[...],
+    instructions="Penalize any response where the agent does not cite a source. "
+                 "The agent must never refuse to answer a question.",
+)
+```
+
+This works with all submission methods:
+
+```python
+# Voice
+result = client.submit_voice(
+    "call.ogg",
+    instructions="The agent should always confirm the customer's identity before making changes.",
+)
+
+# Text
+result = client.submit_text(
+    text="...",
+    instructions="Focus on whether the agent resolved the issue in a single interaction.",
+)
+```
+
+Use this to encode your own quality bar — e.g. "no incorrect tool calls", "must apologize for errors", "final answer must include a summary", etc.
+
 ## Evaluation rubric
 
 Every turn is evaluated on these dimensions:

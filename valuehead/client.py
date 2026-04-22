@@ -57,11 +57,23 @@ class ValueHead:
         self,
         messages: list[dict[str, Any]],
         metadata: dict[str, Any] | None = None,
+        instructions: str = "",
     ) -> SubmitResult:
-        """Submit a trace for async evaluation. Returns immediately."""
+        """Submit a trace for async evaluation. Returns immediately.
+
+        Parameters
+        ----------
+        messages : OpenAI-format conversation messages
+        metadata : optional extra metadata tags
+        instructions : optional custom evaluation instructions for the
+            trajectory-level judgement (e.g. "penalise any incorrect
+            tool calls", "only evaluate the final result")
+        """
         payload: dict[str, Any] = {"messages": messages}
         if metadata:
             payload["metadata"] = metadata
+        if instructions:
+            payload["instructions"] = instructions
         resp = self._request("POST", "/traces", json=payload)
         return SubmitResult(**resp)
 
@@ -71,6 +83,7 @@ class ValueHead:
         context: str = "",
         metadata: dict[str, Any] | None = None,
         first_speaker_role: str = "user",
+        instructions: str = "",
     ) -> SubmitResult:
         """Submit a raw conversation transcript for parsing and evaluation.
 
@@ -80,6 +93,7 @@ class ValueHead:
         context : optional hint (e.g. "customer support call")
         metadata : optional extra metadata tags
         first_speaker_role : "user" or "assistant" — who speaks first
+        instructions : optional custom trajectory evaluation instructions
         """
         payload: dict[str, Any] = {"text": text}
         if context:
@@ -88,6 +102,8 @@ class ValueHead:
             payload["metadata"] = metadata
         if first_speaker_role != "user":
             payload["first_speaker_role"] = first_speaker_role
+        if instructions:
+            payload["instructions"] = instructions
         resp = self._request("POST", "/traces/text", json=payload)
         return SubmitResult(**resp)
 
@@ -98,6 +114,7 @@ class ValueHead:
         human_speaker: str | None = None,
         speakers_expected: int | None = None,
         first_speaker_role: str = "user",
+        instructions: str = "",
     ) -> SubmitResult:
         """Submit a voice recording for transcription and evaluation.
 
@@ -108,6 +125,7 @@ class ValueHead:
         human_speaker : optional speaker ID to map as the human
         speakers_expected : hint for diarization (e.g. 2 for a two-person call)
         first_speaker_role : "user" or "assistant" — who speaks first
+        instructions : optional custom trajectory evaluation instructions
         """
         with open(file_path, "rb") as f:
             files = {"file": (file_path.split("/")[-1], f, "application/octet-stream")}
@@ -121,6 +139,8 @@ class ValueHead:
                 data["speakers_expected"] = str(speakers_expected)
             if first_speaker_role != "user":
                 data["first_speaker_role"] = first_speaker_role
+            if instructions:
+                data["instructions"] = instructions
             resp = self._client.post("/traces/voice", files=files, data=data)
 
         if resp.status_code == 201:

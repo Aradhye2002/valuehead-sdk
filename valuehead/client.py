@@ -58,6 +58,7 @@ class ValueHead:
         messages: list[dict[str, Any]],
         metadata: dict[str, Any] | None = None,
         instructions: str = "",
+        evaluate_safety: bool = False,
     ) -> SubmitResult:
         """Submit a trace for async evaluation. Returns immediately.
 
@@ -68,12 +69,17 @@ class ValueHead:
         instructions : optional custom evaluation instructions for the
             trajectory-level judgement (e.g. "penalise any incorrect
             tool calls", "only evaluate the final result")
+        evaluate_safety : when True, the judge prompt includes a safety
+            and ethics section that scores actions advancing harmful or
+            unethical tasks as -1. Off by default.
         """
         payload: dict[str, Any] = {"messages": messages}
         if metadata:
             payload["metadata"] = metadata
         if instructions:
             payload["instructions"] = instructions
+        if evaluate_safety:
+            payload["evaluate_safety"] = True
         resp = self._request("POST", "/traces", json=payload)
         return SubmitResult(**resp)
 
@@ -84,6 +90,7 @@ class ValueHead:
         metadata: dict[str, Any] | None = None,
         first_speaker_role: str = "user",
         instructions: str = "",
+        evaluate_safety: bool = False,
     ) -> SubmitResult:
         """Submit a raw conversation transcript for parsing and evaluation.
 
@@ -94,6 +101,8 @@ class ValueHead:
         metadata : optional extra metadata tags
         first_speaker_role : "user" or "assistant" — who speaks first
         instructions : optional custom trajectory evaluation instructions
+        evaluate_safety : when True, the judge prompt includes a safety
+            and ethics section. Off by default.
         """
         payload: dict[str, Any] = {"text": text}
         if context:
@@ -104,6 +113,8 @@ class ValueHead:
             payload["first_speaker_role"] = first_speaker_role
         if instructions:
             payload["instructions"] = instructions
+        if evaluate_safety:
+            payload["evaluate_safety"] = True
         resp = self._request("POST", "/traces/text", json=payload)
         return SubmitResult(**resp)
 
@@ -115,6 +126,7 @@ class ValueHead:
         speakers_expected: int | None = None,
         first_speaker_role: str = "user",
         instructions: str = "",
+        evaluate_safety: bool = False,
     ) -> SubmitResult:
         """Submit a voice recording for transcription and evaluation.
 
@@ -126,6 +138,8 @@ class ValueHead:
         speakers_expected : hint for diarization (e.g. 2 for a two-person call)
         first_speaker_role : "user" or "assistant" — who speaks first
         instructions : optional custom trajectory evaluation instructions
+        evaluate_safety : when True, the judge prompt includes a safety
+            and ethics section. Off by default.
         """
         with open(file_path, "rb") as f:
             files = {"file": (file_path.split("/")[-1], f, "application/octet-stream")}
@@ -141,6 +155,8 @@ class ValueHead:
                 data["first_speaker_role"] = first_speaker_role
             if instructions:
                 data["instructions"] = instructions
+            if evaluate_safety:
+                data["evaluate_safety"] = "true"
             resp = self._client.post("/traces/voice", files=files, data=data)
 
         if resp.status_code == 201:

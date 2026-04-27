@@ -18,6 +18,13 @@ from valuehead.models import (
     TrajectoryJudgement,
     TurnJudgement,
 )
+from valuehead.streaming import (
+    JudgementEvent,
+    StreamingError,
+    StreamingSession,
+    streaming_session,
+    wait_for_completion,
+)
 
 __all__ = [
     "ValueHead",
@@ -32,4 +39,9 @@ __all__ = [
     "SessionDetail",
     "SessionListItem",
     "SessionsListResponse",
+    "StreamingSession",
+    "streaming_session",
+    "JudgementEvent",
+    "StreamingError",
+    "wait_for_completion",
 ]
